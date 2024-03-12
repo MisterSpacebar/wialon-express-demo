@@ -8,7 +8,7 @@ const app = express();
 const port = 3000;
 
 // Replace 'YOUR_WIALON_TOKEN' with your actual Wialon token
-const wialonToken = process.env.UPDATED_TOKEN;
+const wialonToken = process.env.UPDATED_TOKEN_2;
 const wialonBaseUrl = 'https://hst-api.wialon.us';
 
 const secretKey = 'TEST_SECRET_KEY';
