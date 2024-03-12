@@ -51,8 +51,8 @@ function errorCheck(e){
         "2015": '2015: Sensor deleting is forbidden because of using in another sensor or advanced properties of the unit'
     }
 
-    if(e.toString() === undefined || e.toString() === null){
-       return "Error code:" + e + " not found in error list. Check the server console for more details.";
+    if(e == undefined || e == null){
+       return "Error code: " + e + " is not found in error list. Check the server console for more details.";
     } else {
         return errorList[e.toString()];
     }
@@ -61,7 +61,11 @@ function errorCheck(e){
 app.get('/login', async (req, res) => {
     try {
         const response = await axios.get(`${wialonBaseUrl}/wialon/ajax.html?svc=token/login&params={"token":"${wialonToken}"}`);
-        console.log(`server response: ${response.data.error}`);
+        if(response.data.error == undefined){
+            console.log("No error on server");
+        } else {
+            console.log(`server response: ${response.data.error}`);
+        }
         if (response.data && response.data.eid)     {
             console.log('Logged in successfully. Session ID:', response.data.eid)
             console.log(response.data);
@@ -133,7 +137,7 @@ app.get('/availableUnits', async (req, res) => {
     console.log("session id: "+req.session.user.session_id);
 
     try {
-        const response = await axios.get(`https://hst-api.wialon.us/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*","sortType":"sys_name"},"force":1,"flags":13644935,"from":0,"to":4294967295}&sid=${req.session.user.session_id}`);
+        const response = await axios.get(`${wialonBaseUrl}/wialon/ajax.html?svc=core/search_items&params={"spec":{"itemsType":"avl_unit","propName":"sys_name","propValueMask":"*100*","sortType":"sys_name"},"force":1,"flags":1,"from":0,"to":0}&sid=${req.session.user.session_id}`);
         console.log(response);
         console.log(`server response: ${errorCheck(response.data.error)}`);
         if (response.data && response.data.error === 0) {
@@ -159,11 +163,15 @@ app.get('/createUnit/:creator_id/:name/:hw_id/:data_flag/', async (req, res) => 
     };
 
     console.log(req.session.user.session_id);
-    //console.log(`${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params={"creatorId":${parseInt(req.params.creator_id)},"name":"${req.params.name}","hwTypeId":${parseInt(req.params.hw_id)},"dataFlags":${parseInt(req.params.data_flag)}}&sid=${req.session.user.session_id}`);
+    let create_unit_url = `${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params={"creatorId":${BigInt(req.params.creator_id)},"name":"${req.params.name.toString()}","hwTypeId":${BigInt(req.params.hw_id)},"dataFlags":${BigInt(req.params.data_flag)}}&sid=${req.session.user.session_id}`;
     console.log('Parameters:', item);
+    //let create_unit_url = `${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params=${JSON.stringify(item)}&sid=${req.session.user.session_id}`;
+    console.log(create_unit_url);
 
     try {
-        const response = await axios.get(`${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params=${encodeURIComponent(JSON.stringify(item))}&sid=${req.session.user.session_id}`);
+        console.log(req.session.user.session_id);
+        // `${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params=${JSON.stringify(item)}&sid=${req.session.user.session_id}
+        const response = await axios.get(create_unit_url);
         console.log(response);
         if(response.data.error){
             console.log(`server response: ${errorCheck(response.data.error)}`);
@@ -181,7 +189,30 @@ app.get('/createUnit/:creator_id/:name/:hw_id/:data_flag/', async (req, res) => 
 });
 
 app.get('/deleteUnit/:unit_id/', async (req, res) => {
+    console.log(req.session.user.session_id);
+    try{
+        const response = await axios.get(`${wialonBaseUrl}/wialon/ajax.html?svc=core/delete_item&params={"itemId":${parseInt(req.params.unit_id)}}&sid=${req.session.user.session_id}`);
+        console.log(response);
+        console.log(`server response: ${errorCheck(response.data.error)}`);
 
+        if (response.data && response.data.error === 0) {
+            try {
+                const response = await axios.get(`${wialonBaseUrl}/wialon/ajax.html?svc=core/search_item&params={"id":${parseInt(req.params.unit_id)},"flags":1}&sid=${req.session.user.session_id}`);
+                if (response.data && response.data.error === 7) {
+                    console.log('Unit deleted:', response.data);
+                    res.send('Unit deleted: Check the server console for more details.');
+                }
+            } catch (error) {
+                console.error('Error deleting unit:', error);
+                res.send('Error deleting unit. Check the server console for more details.');
+            }
+            console.log('Unit deleted:', response.data);
+            res.send('Unit deleted: Check the server console for more details.');
+        }
+    } catch (error){
+        console.error('Error deleting unit:', error);
+        res.send('Error deleting unit. Check the server console for more details.');
+    }
 });
 
 app.listen(port, () => {
