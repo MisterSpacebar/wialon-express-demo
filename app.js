@@ -2,14 +2,13 @@ const express = require('express');
 const session = require('express-session');
 const axios = require('axios');
 const { error } = require('console');
-//const wialon = require('wialonjs-api');
 require('dotenv').config();
 
 const app = express();
 const port = 3000;
 
 // Replace 'YOUR_WIALON_TOKEN' with your actual Wialon token
-const wialonToken = process.env.TOKEN;
+const wialonToken = process.env.UPDATED_TOKEN;
 const wialonBaseUrl = 'https://hst-api.wialon.us';
 
 const secretKey = 'TEST_SECRET_KEY';
@@ -22,7 +21,7 @@ app.use(session({
 }));
 
 function errorCheck(e){
-    errorList = {
+    let errorList = {
         "-101": '-101: Internal error (network timeout)',
         "-100": '100: Internal error (wrong network response)',
         "0": '0: No error',
@@ -66,7 +65,7 @@ app.get('/login', async (req, res) => {
         } else {
             console.log(`server response: ${response.data.error}`);
         }
-        if (response.data && response.data.eid)     {
+        if (response.data?.eid) {
             console.log('Logged in successfully. Session ID:', response.data.eid)
             console.log(response.data);
 
@@ -165,7 +164,7 @@ app.get('/createUnit/:creator_id/:name/:hw_id/:data_flag/', async (req, res) => 
     console.log(req.session.user.session_id);
     let create_unit_url = `${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params={"creatorId":${BigInt(req.params.creator_id)},"name":"${req.params.name.toString()}","hwTypeId":${BigInt(req.params.hw_id)},"dataFlags":${BigInt(req.params.data_flag)}}&sid=${req.session.user.session_id}`;
     console.log('Parameters:', item);
-    //let create_unit_url = `${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params=${JSON.stringify(item)}&sid=${req.session.user.session_id}`;
+    // optional: let create_unit_url = `${wialonBaseUrl}/wialon/ajax.html?svc=core/create_unit&params=${JSON.stringify(item)}&sid=${req.session.user.session_id}`;
     console.log(create_unit_url);
 
     try {
